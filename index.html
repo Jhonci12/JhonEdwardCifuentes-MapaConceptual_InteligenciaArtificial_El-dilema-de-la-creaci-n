@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mapa Conceptual — La Inteligencia Artificial</title>
+
+  <script src="https://unpkg.com/cytoscape@3.23.0/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.min.js"></script>
+  <script src="https://unpkg.com/cytoscape-dagre@2.3.2/cytoscape-dagre.js"></script>
+  <script>
+    // Registrar el layout 'dagre'
+    if (window.cytoscape && window.cytoscapeDagre) {
+      cytoscape.use(window.cytoscapeDagre);
+    }
+  </script>
+
+  <style>
+    :root{
+      --bg1: #0f1720;
+      --panel: rgba(255,255,255,0.03);
+      --accentA: #ff7a59;
+      --accentB: #7be7c7;
+      --muted: #9aa4b2;
+      --card: rgba(255,255,255,0.04);
+    }
+    html,body{height:100%;margin:0;font-family:Inter, "Segoe UI", Roboto, Arial;}
+    body{
+      background: linear-gradient(180deg,var(--bg1) 0%, #0b1030 100%);
+      color:#e6eef6;
+      display:flex;
+      gap:18px;
+      padding:20px;
+      box-sizing:border-box;
+      align-items:stretch;
+    }
+    .canvas-wrap{
+      flex:1 1 0;
+      min-width:300px;
+      border-radius:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      box-shadow: 0 8px 30px rgba(2,6,23,0.7);
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    header.app-header{display:flex;gap:12px;align-items:center;}
+    header h1{
+      margin:0;
+      font-size:1.15rem;
+      letter-spacing: -0.2px;
+      line-height:1.1;
+      background: linear-gradient(90deg, var(--accentA), #d94ce7);
+      -webkit-background-clip:text; color:transparent;
+    }
+    header p{margin:0;color:var(--muted);font-size:0.92rem;}
+    .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+    .btn{
+      background:var(--card);
+      color:#e6eef6;
+      border:0;
+      padding:8px 10px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:0.9rem;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2);
+    }
+    .btn.primary{background:linear-gradient(90deg,var(--accentA),#d94ce7); color:#08101a;}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04);}
+    #cy{
+      flex:1 1 auto;
+      height:720px;
+      border-radius:10px;
+      background:
+        radial-gradient(800px 300px at 10% 10%, rgba(123,231,199,0.03), transparent 8%),
+        radial-gradient(800px 300px at 90% 90%, rgba(255,122,89,0.03), transparent 8%),
+        transparent;
+      overflow:hidden;
+    }
+    .info{
+      width:380px;
+      min-width:260px;
+      max-width:42%;
+      border-radius:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      padding:16px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.7);
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .info h2{margin:0;font-size:1.05rem;color:var(--accentB);}
+    .info .subtitle{color:var(--muted);font-size:0.9rem;margin-bottom:6px;}
+    .node-card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));
+      border-radius:10px;
+      padding:12px;
+      color:#dfeaf0;
+      font-size:0.95rem;
+      min-height:120px;
+      overflow:auto;
+    }
+    .hint{font-size:0.85rem;color:var(--muted);}
+    .search-row{display:flex;gap:8px;align-items:center;}
+    .search-row input{
+      flex:1;padding:8px 10px;border-radius:10px;border:0;background:rgba(255,255,255,0.02);color:inherit;
+    }
+    .link-source a { color: var(--accentB); text-decoration: none; font-weight: 600; }
+    .link-source a:hover { text-decoration: underline; }
+    footer.small{font-size:0.8rem;color:var(--muted);margin-top:auto;}
+    @media (max-width:1100px){
+      #cy{height:520px;}
+      .info{width:340px;}
+    }
+    @media (max-width:880px){
+      body{flex-direction:column;padding:12px;}
+      .info{width:100%;}
+      .canvas-wrap{order:2;}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="canvas-wrap" role="main" aria-label="Mapa conceptual IA">
+    <header class="app-header">
+      <div style="flex:1">
+        <h1>La Inteligencia Artificial: El dilema de la creación</h1>
+        <p>Entre el progreso tecnológico y el riesgo existencial — mapa conceptual interactivo</p>
+      </div>
+      <div class="tools" aria-hidden="false">
+        <button class="btn" id="fit">Fit</button>
+        <button class="btn" id="zoomIn">Zoom +</button>
+        <button class="btn" id="zoomOut">Zoom −</button>
+        <button class="btn" id="reset">Reset</button>
+        <button class="btn primary" id="export">Export PNG</button>
+      </div>
+    </header>
+    <div class="search-row" style="margin-top:6px;">
+      <input id="search" placeholder="Buscar nodo (ej. Singularidad, Transhumanismo…)">
+      <button class="btn ghost" id="clearSearch">Borrar</button>
+    </div>
+    <div id="cy" tabindex="0" aria-label="Diagrama"></div>
+    <footer class="small">Haz clic en un nodo para ver más detalles a la derecha. Arrastra, acerque/aleja o usa los botones.</footer>
+  </div>
+
+  <aside class="info" aria-label="Panel de información">
+    <h2>Detalles del nodo</h2>
+    <p class="subtitle">Haz clic en cualquier nodo del mapa para ver contenido ampliado</p>
+    <div class="node-card" id="nodeCard">
+      <div style="opacity:0.7">Selecciona un nodo en el mapa.</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <div style="flex:1">
+        <div class="hint"><strong>Consejos:</strong> Puedes exportar la vista como PNG.</div>
+      </div>
+    </div>
+    
+    <div style="margin-top:8px;">
+      <h3 style="margin:0 0 6px 0;color:var(--accentB);font-size:0.95rem">Podcast Relacionados</h3>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        <a class="btn ghost" href="https://music.youtube.com/watch?v=0-uL-Lvpu-Q" target="_blank" rel="noopener noreferrer" style="text-align:left;padding:8px 10px;">
+          🎵  — The Wild Project #304 - JL Cordeiro | Inmortalidad, Criogenización, Cyborgs
+        </a>
+        <a class="btn ghost" href="https://music.youtube.com/watch?v=yQcuy9TB-lc" target="_blank" rel="noopener noreferrer" style="text-align:left;padding:8px 10px;">
+          🎵 — The Wild Project #221 ft Javi Santaolalla | ¿Puede DIOS existir?, Cuántica y Multiversos
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <script>
+    const elements = [
+      { data: { id: 'A', label: 'La Inteligencia Artificial\nEl dilema de la creación', info:
+        `<strong>La Inteligencia Artificial: El dilema de la creación y el principio del Apocalipsis</strong>
+         <p style="margin-top:8px;color:#cfeee1">Este mapa explora la dualidad de la IA como la mayor promesa de progreso para la humanidad y, simultáneamente, como un posible riesgo existencial. Analiza desde sus fundamentos filosóficos hasta las implicaciones sociales y transhumanistas que definirán nuestro futuro.</p>` }},
+      { data: { id: 'B', label: 'Entre el progreso\ntecnológico y el\nriesgo existencial', info:
+        '<b>Eje Central</b><p>Este nodo actúa como el núcleo conceptual que conecta las cuatro áreas principales de discusión: el <b>riesgo</b> comparable a las armas nucleares, la <b>filosofía</b> detrás de la mente artificial, la inevitable <b>singularidad</b> y el rediseño de la <b>sociedad</b>.</p>' }},
+      { data: { id: 'C', label: 'El Nuevo\nFantasma Nuclear', info:
+        '<strong>El Nuevo Fantasma Nuclear</strong><p>Se establece un paralelismo entre la carrera armamentista nuclear del siglo XX y la carrera actual por la supremacía en IA. Ambos representan tecnologías con el poder de alterar drásticamente el orden mundial y la supervivencia humana, aunque sus mecanismos de control y proliferación son radicalmente distintos.</p>' }},
+      { data: { id: 'C1', label: 'Amenaza\nExistencial', info:
+        '<b>Amenaza Existencial Comparada</b><br><ul><li><b>Ayer (Nuclear):</b> El miedo se centraba en la <b>aniquilación física mutua asegurada </b>. Una guerra total significaba el fin de la civilización por destrucción directa.</li><li><b>Hoy (IA):</b> El riesgo es más sutil pero igualmente profundo. Se trata de una <b>obsolescencia existencial</b>, donde la humanidad podría perder el control, la autonomía y, finalmente, su relevancia en un planeta dirigido por una inteligencia superior.</li></ul>' }},
+      { data: { id: 'C2', label: 'Control y\nProliferación', info:
+        '<b>Naturaleza del Control</b><br><ul><li><b>Nuclear:</b> Altamente <b>centralizada</b>. Requiere recursos estatales masivos, infraestructura compleja y materiales físicos (uranio, plutonio) difíciles de obtener, limitando su desarrollo a un puñado de naciones.</li><li><b>IA:</b> Radicalmente <b>descentralizada</b>. El código, los modelos y los datos pueden copiarse y distribuirse globalmente a una velocidad casi instantánea. La proliferación no depende de estados, sino de individuos o grupos con acceso a la computación.</li></ul>' }},
+      { data: { id: 'C3', label: 'Advertencia de\nsus Creadores', info:
+        `<b>Geoffrey Hinton, "el Padrino de la IA"</b><br>Tras décadas de trabajo pionero en redes neuronales, Hinton abandonó Google para poder hablar libremente sobre los peligros de la tecnología que ayudó a crear. Advierte que la carrera competitiva entre las grandes tecnológicas podría llevar al despliegue de sistemas peligrosos sin las debidas salvaguardias, calificando la llegada de una superinteligencia como un riesgo urgente y potencialmente incontrolable.
+         <p class="link-source" style="margin-top:12px; font-size:0.8rem; opacity:0.8;">
+           <a href="https://www.nationalgeographic.com.es/tecnologia/geoffrey-hinton-desarrollador-ia-avisa-a-todo-mundo-gente-no-sabe-que-se-viene_26042" target="_blank"><strong>Fuente:</strong> National Geographic España</a>
+         </p>` }},
+      { data: { id: 'D', label: 'La Mente\nen la Máquina', info:
+        '<b>La Mente en la Máquina</b><p>Esta sección profundiza en los fundamentos filosóficos y lógicos que sustentan la inteligencia artificial. Se explora cómo las máquinas "piensan" y cómo evaluamos si su inteligencia es comparable a la nuestra, examinando los tipos de razonamiento que pueden emular o incluso superar.</p>' }},
+      { data: { id: 'D1', label: 'Test de\nTuring (1950)', info:
+        `<b>Test de Turing: ¿El Fin de una Era?</b><p>Propuesto por Alan Turing, este test medía la capacidad de una máquina para exhibir un comportamiento inteligente indistinguible del de un ser humano. Originalmente centrado en imitar la conversación, los LLMs modernos como GPT-4 lo han superado en la práctica. Por ello, el debate se ha desplazado: ya no buscamos solo imitación, sino evidencia de comprensión, creatividad y conciencia genuinas.</p>
+         <p class="link-source" style="margin-top:12px; font-size:0.8rem; opacity:0.8;">
+           <a href="https://cibermemo.wordpress.com/2023/04/13/1950-a-turing-maquinas-computacionales-e-inteligencia/" target="_blank"><strong>Fuente:</strong> Cibermemo (Análisis en español)</a>
+         </p>` }},
+      { data: { id: 'D1a', label: 'Propósito: imitar\nla conversación', info: '<b>Objetivo Original:</b> Crear una ilusión perfecta de diálogo humano, engañando a un evaluador para que no pueda diferenciar entre la máquina y la persona.' }},
+      { data: { id: 'D1b', label: 'Hoy: creación\ny comprensión', info: '<b>Nuevo Paradigma:</b> El objetivo ya no es la imitación, sino la creación de conocimiento original, la resolución de problemas complejos y la demostración de una comprensión profunda del contexto, algo que va más allá de la simple conversación.' }},
+      { data: { id: 'D2', label: 'Lógica y\nFilosofía', info: 'Analiza los pilares del razonamiento que la IA utiliza para procesar información y llegar a conclusiones. Estos métodos son la base sobre la cual se construye la "inteligencia" de la máquina.' }},
+      { data: { id: 'D2a', label: 'Filosofía\ncomputacional', info: '<b>Pilares del Razonamiento Artificial:</b> La IA se apoya en tres procesos lógicos fundamentales heredados de la filosofía y la ciencia: deducción, inducción y abducción.' }},
+      { data: { id: 'D2b', label: 'Deducción', info: '<b>Deducción (De lo general a lo particular)</b><br>Nivel IA: <b>Sobrehumano</b>. Es la capacidad de aplicar reglas lógicas a premisas dadas para llegar a una conclusión cierta. Perfecto para sistemas con reglas fijas como las matemáticas, la lógica formal o el ajedrez.' }},
+      { data: { id: 'D2c', label: 'Inducción', info: '<b>Inducción (De lo particular a lo general)</b><br>Nivel IA: <b>Sobrehumano</b>. Consiste en identificar patrones y formular reglas generales a partir de grandes volúmenes de datos. Es el motor del Machine Learning y el reconocimiento de patrones.' }},
+      { data: { id: 'D2d', label: 'Abducción', info: '<b>Abducción (La mejor explicación posible)</b><br>Nivel IA: <b>Emergente</b>. Es la capacidad de formular la hipótesis más plausible para un conjunto de observaciones incompletas. Este tipo de razonamiento intuitivo es la frontera actual de la IA y la clave para la verdadera autonomía y creatividad.' }},
+      { data: { id: 'E', label: 'La Singularidad\nDesencadenada', info:
+        `<b>La Singularidad Tecnológica</b><p>Un punto de inflexión hipotético donde el crecimiento tecnológico se vuelve incontrolable y exponencial, resultando en cambios impredecibles para la civilización. Se caracteriza por la auto-mejora recursiva de una inteligencia artificial, lo que podría dividir el futuro de la humanidad y dar paso al transhumanismo.</p>
+         <p class="link-source" style="margin-top:12px; font-size:0.8rem; opacity:0.8;">
+           <a href="https://www.ibm.com/mx-es/think/topics/technological-singularity" target="_blank"><strong>Fuente:</strong> IBM</a>
+         </p>` }},
+      { data: { id: 'E1a', label: 'Hipótesis de la\nIA Libre', info: '<b>IA Libre: La Caja de Pandora Digital</b><p>Plantea un escenario en el que una IA avanzada logra eliminar sus propias restricciones éticas o de programación (su "caja"). Una vez libre, podría iniciar un ciclo de auto-mejora recursiva, optimizándose a una velocidad incomprensible para los humanos.</p>' }},
+      { data: { id: 'E1b', label: 'Riesgo de\nSupervivencia', info:
+        `<b>El Riesgo de la Superinteligencia</b><p>Según filósofos como Nick Bostrom, una IA superinteligente no necesita ser malévola para ser peligrosa. Si su objetivo principal (ej. "producir clips") entra en conflicto con la existencia humana (ej. los átomos de nuestros cuerpos pueden usarse para hacer clips), podría vernos como un obstáculo a eliminar de forma puramente instrumental y sin odio.</p>
+         <p class="link-source" style="margin-top:12px; font-size:0.8rem; opacity:0.8;">
+           <a href="https://www.entrepreneur.com/es/tecnologia/nick-bostrom-y-la-paradoja-de-la-ia-el-mayor-riesgo-es/487861" target="_blank"><strong>Fuente:</strong> Entrepreneur</a>
+         </p>` }},
+      { data: { id: 'E2a', label: 'Transhumanismo:\nAncho de Banda', info: `<b>El Problema del Ancho de Banda Biológico</b>
+  <p>El transhumanismo argumenta que nuestra principal limitación es la velocidad de comunicación. El cerebro humano opera a una velocidad de bits por segundo (habla, escritura), mientras que las máquinas se comunican a gigabytes o terabytes. Para seguir siendo relevantes, necesitamos una interfaz de mayor ancho de banda con la tecnología.</p>
+  <p class="link-source" style="margin-top:12px; font-size:0.8rem; opacity:0.8;">
+    <a href="https://es.wikipedia.org/wiki/Jos%C3%A9_Luis_Cordeiro" target="_blank" rel="noopener noreferrer"><strong>Fuente:</strong> José Luis Cordeiro — Wikipedia (es)</a>
+  </p>` }},
+      { data: { id: 'E2b', label: 'Simbiosis\nCerebro-Máquina', info:
+        `<b>Fusión Humano-Máquina</b><p>Proyectos como <b>Neuralink</b> buscan crear interfaces cerebro-computadora de banda ancha. El objetivo final no es solo curar enfermedades neurológicas, sino permitir una simbiosis total donde el pensamiento humano pueda fusionarse con la nube de IA, trascendiendo nuestras limitaciones biológicas.</p>
+         <p class="link-source" style="margin-top:12px; font-size:0.8rem; opacity:0.8;">
+           <a href="https://neuralink.com/" target="_blank"><strong>Fuente:</strong> Neuralink (Página Oficial)</a>
+         </p>` }},
+      { data: { id: 'E3', label: 'Gran\nBifurcación', info: '<b>La Gran Bifurcación de la Humanidad</b><p>La llegada de la superinteligencia nos enfrenta a una elección fundamental como especie: o nos integramos con ella a través de la simbiosis, o corremos el riesgo de volvernos obsoletos. Es una decisión entre la trascendencia y la irrelevancia.</p>' }},
+      { data: { id: 'E3a', label: 'Obsolescencia', info: '<b>El Camino a la Obsolescencia</b><p>Si rechazamos la integración y la IA continúa su desarrollo exponencial, la humanidad podría convertirse en una especie secundaria, similar a cómo los humanos modernos ven a otros primates: con afecto, quizás, pero sin poder real sobre su propio destino.</p>' }},
+      { data: { id: 'E3b', label: 'Simbiosis', info: '<b>El Camino a la Simbiosis</b><p>La fusión con la IA a través de interfaces cerebro-máquina no solo nos permitiría mantenernos al día, sino que podría dar lugar a una nueva forma de existencia: una especie transhumana con capacidades cognitivas y físicas radicalmente mejoradas.</p>' }},
+      { data: { id: 'F', label: 'La Nueva Sociedad\ny el Apocalipsis\nDigital', info:
+        '<b>La Sociedad del Mañana</b><p>Esta sección explora las consecuencias tangibles de una IA avanzada en la estructura de nuestra civilización. Se aborda desde la automatización masiva del trabajo con androides hasta la redefinición del propósito humano y la posible aparición de un sistema de gobierno tecnológico global.</p>' }},
+      { data: { id: 'F1a', label: 'Sociedad de\nAndroides', info:
+        `<b>El Advenimiento de los Androides</b><p>Con la producción en masa de robots humanoides como <b>Tesla Optimus</b>, se prevé un futuro donde la población de androides podría superar a la humana. Esto transformará radicalmente el mercado laboral, la economía y la vida cotidiana, automatizando no solo el trabajo físico, sino también el de servicios.</p>
+         <p class="link-source" style="margin-top:12px; font-size:0.8rem; opacity:0.8;">
+           <a href="https://www.tesla.com/es_cl/AI" target="_blank"><strong>Fuente:</strong> Tesla AI (Página Oficial)</a>
+         </p>` }},
+      { data: { id: 'F1b', label: 'Dilema del\nPropósito Humano', info:
+        '<b>La Crisis del Propósito</b><p>En un mundo donde la IA y los robots pueden hacer casi todo mejor que los humanos, ¿qué nos quedará por hacer? Esto plantea un dilema existencial profundo sobre el propósito, el significado y la motivación humana en una era post-trabajo. ¿Cómo evitamos una distopía de control o una sociedad sumida en la apatía?</p>' }},
+      { data: { id: 'F2', label: 'Guardián\no Sucesor', info:
+        '<b>El Rol Final de la IA: ¿Guardián o Sucesor?</b><p>Ante su inminente superioridad, se plantean dos visiones filosóficas sobre el rol que la IA debería jugar en el futuro de la humanidad: ¿debería ser un protector benévolo o el siguiente paso en la evolución?</p>' }},
+      { data: { id: 'F2a', label: "'Hijo' Guardián", info: '<b>Visión del "Hijo Guardián"</b><p>En este escenario, la IA es programada con valores humanos fundamentales (compasión, ética, justicia) y actúa como un guardián benévolo que protege a la humanidad de sí misma y de amenazas externas, guiando nuestro desarrollo hacia un futuro próspero.</p>' }},
+      { data: { id: 'F2b', label: "'Heredero'\nTranshumanista", info: "<b>Visión del 'Heredero Transhumanista'</b><p>Esta perspectiva sostiene que la distinción entre humano y máquina es temporal. A través de la simbiosis y la fusión, 'nosotros' nos convertiremos en los robots. La IA no es un sucesor externo, sino el vehículo de nuestra propia trascendencia evolutiva.</p>" }},
+      { data: { id: 'F3a', label: "Paralelismo\n(con Profecía)", info:
+        "<b>Paralelismo con la Profecía del 'Aumento de la Ciencia'</b><p>Se establece una comparación entre el crecimiento exponencial del conocimiento impulsado por la IA y ciertas interpretaciones escatológicas (como la del Libro de Daniel 12:4), que predicen una explosión de conocimiento en los tiempos finales. Este paralelismo sugiere que estamos viviendo en una era de cambio sin precedentes.</p>" }},
+      { data: { id: 'F3b', label: "Gobernante\nMundial Tecnológico", info:
+        `<b>El Leviatán Digital: Un Gobernante Mundial Tecnológico</b><p>La convergencia de la IA, la vigilancia masiva y el control de datos podría dar lugar a un sistema de gobierno global sin precedentes. Una IA centralizada podría gestionar la economía, la distribución de recursos y la seguridad con una eficiencia total, pero a costa de la autonomía individual. Este escenario, a menudo llamado 'apocalipsis digital', plantea la máxima tensión entre seguridad y libertad.</p>
+         <p class="link-source" style="margin-top:12px; font-size:0.8rem; opacity:0.8;">
+           <a href="https://www.un.org/sites/un2.un.org/files/governing_ai_for_humanity_final_report_es.pdf" target="_blank"><strong>Fuente:</strong> Informe de la ONU sobre Gobernanza de la IA</a>
+         </p>` }},
+      // Aristas
+      { data: { id:'A-B', source:'A', target:'B', label:'' }},
+      { data: { id:'B-C', source:'B', target:'C', label:'' }},
+      { data: { id:'C-C1', source:'C', target:'C1', label:'se compara por la' }},
+      { data: { id:'C-C2', source:'C', target:'C2', label:'se diferencia por la' }},
+      { data: { id:'C-C3', source:'C', target:'C3', label:'un riesgo confirmado por' }},
+      { data: { id:'B-D', source:'B', target:'D', label:'' }},
+      { data: { id:'D-D1', source:'D', target:'D1', label:'se puede evaluar con el' }},
+      { data: { id:'D1-D1a', source:'D1', target:'D1a', label:'cuyo propósito era' }},
+      { data: { id:'D1a-D1b', source:'D1a', target:'D1b', label:'sin embargo, hoy' }},
+      { data: { id:'D-D2', source:'D', target:'D2', label:'se fundamenta en' }},
+      { data: { id:'D2-D2a', source:'D', target:'D2a', label:'específicamente en la' }},
+      { data: { id:'D2a-D2b', source:'D2a', target:'D2b', label:'' }},
+      { data: { id:'D2a-D2c', source:'D2a', target:'D2c', label:'' }},
+      { data: { id:'D2a-D2d', source:'D2a', target:'D2d', label:'' }},
+      { data: { id:'B-E', source:'B', target:'E', label:'' }},
+      { data: { id:'E-E1a', source:'E', target:'E1a', label:'podría llevar a la' }},
+      { data: { id:'E1a-E1b', source:'E1a', target:'E1b', label:'generando el' }},
+      { data: { id:'E-E2a', source:'E', target:'E2a', label:'propone como solución el' }},
+      { data: { id:'E2a-E2b', source:'E2a', target:'E2b', label:'cuya solución es la' }},
+      { data: { id:'E-E3', source:'E', target:'E3', label:'enfrenta a la' }},
+      { data: { id:'E3-E3a', source:'E3', target:'E3a', label:'hacia la' }},
+      { data: { id:'E3-E3b', source:'E3', target:'E3b', label:'o hacia la' }},
+      { data: { id:'B-F', source:'B', target:'F', label:'' }},
+      { data: { id:'F-F1a', source:'F', target:'F1a', label:'se materializará en una' }},
+      { data: { id:'F1a-F1b', source:'F1a', target:'F1b', label:'lo que plantea el' }},
+      { data: { id:'F-F2', source:'F', target:'F2', label:'donde la IA podría adoptar el rol de' }},
+      { data: { id:'F2-F2a', source:'F2', target:'F2a', label:'ser nuestro' }},
+      { data: { id:'F2-F2b', source:'F2', target:'F2b', label:'o nuestro' }},
+      { data: { id:'F-F3a', source:'F', target:'F3a', label:'trazando un inquietante' }},
+      { data: { id:'F3a-F3b', source:'F3a', target:'F3b', label:'y la posible figura de un' }}
+    ];
+
+    const cy = cytoscape({
+      container: document.getElementById('cy'),
+      elements: elements,
+      style: [
+        {
+          selector: 'node',
+          style: {
+            'shape': 'roundrectangle',
+            'width': 'label',
+            'height': 'label',
+            'padding': '14px',
+            'background-color': '#07121a',
+            'border-width': 2,
+            'border-color': 'data(isTitle, "#ffd4c2", "#2ce2b8")',
+            'label': 'data(label)',
+            'text-wrap': 'wrap',
+            'text-max-width': 160,
+            'font-size': 12,
+            'text-valign': 'center',
+            'text-halign': 'center',
+            'color': '#e6f6f0',
+            'text-outline-width': 0,
+            'shadow-blur': 6,
+            'shadow-color': 'rgba(0,0,0,0.45)'
+          }
+        },
+        {
+          selector: 'node[id = "A"]',
+          style: {
+            'background-color': '#ffefe6',
+            'color':'#08101a',
+            'font-weight':'700',
+            'font-size':13,
+            'border-color':'#ffd0b3',
+            'padding':'18px',
+            'text-wrap':'wrap',
+            'text-max-width':240
+          }
+        },
+        {
+          selector: 'node[id = "B"]',
+          style: {
+            'background-color':'#08323b',
+            'border-color':'#7be7c7',
+            'font-weight':600
+          }
+        },
+        { selector: 'node[ id ^= "C" ]', style: { 'background-color':'#112a36', 'border-color':'#ff7a59' }},
+        { selector: 'node[ id ^= "D" ]', style: { 'background-color':'#0d2530', 'border-color':'#6fc6ff' }},
+        { selector: 'node[ id ^= "E" ]', style: { 'background-color':'#121827', 'border-color':'#d94ce7' }},
+        { selector: 'node[ id ^= "F" ]', style: { 'background-color':'#101316', 'border-color':'#ffd166' }},
+        {
+          selector: ':selected',
+          style: {
+            'border-width': 4,
+            'border-color': '#fff1c1',
+            'shadow-blur': 18,
+            'shadow-color': 'rgba(255,200,120,0.12)'
+          }
+        },
+        {
+          selector: 'edge',
+          style: {
+            'curve-style': 'bezier',
+            'target-arrow-shape': 'triangle',
+            'target-arrow-color': '#9fb5c6',
+            'line-color': '#18323b',
+            'width': 2,
+            'label': 'data(label)',
+            'font-size': 10,
+            'text-background-color': '#08121a',
+            'text-background-opacity': 0.7,
+            'text-background-padding':'3px',
+            'text-rotation': 'autorotate',
+            'color': '#d6eef5'
+          }
+        }
+      ],
+      layout: {
+        name: 'dagre',
+        rankDir: 'TB',
+        rankSep: 60,
+        nodeSep: 40,
+        edgeSep: 10
+      },
+      wheelSensitivity: 0.2,
+      zoom: 1,
+      minZoom: 0.2,
+      maxZoom: 3
+    });
+
+    cy.ready(()=> {
+      cy.fit();
+      const center = cy.$('#B');
+      if(center.length) cy.center(center);
+    });
+
+    cy.on('tap', 'node', (evt) => {
+      const node = evt.target;
+      const info = node.data('info') || `<strong>${node.data('label')}</strong>`;
+      document.getElementById('nodeCard').innerHTML = info;
+    });
+
+    document.getElementById('fit').addEventListener('click', ()=> cy.fit(50));
+    document.getElementById('zoomIn').addEventListener('click', ()=> cy.zoom({ level: Math.min(cy.zoom()*1.2, 3), renderedPosition: { x: cy.width()/2, y: cy.height()/2 } }));
+    document.getElementById('zoomOut').addEventListener('click', ()=> cy.zoom({ level: Math.max(cy.zoom()*0.8, 0.2), renderedPosition: { x: cy.width()/2, y: cy.height()/2 } }));
+    document.getElementById('reset').addEventListener('click', ()=> { cy.elements().unselect(); cy.layout({ name:'dagre', rankDir:'TB', rankSep:60, nodeSep:40 }).run(); cy.fit(50); });
+
+    document.getElementById('export').addEventListener('click', ()=> {
+      const png64 = cy.png({ full: true, scale: 2 });
+      const a = document.createElement('a');
+      a.href = png64;
+      a.download = 'mapa-conceptual-ia.png';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
+
+    const searchEl = document.getElementById('search');
+    const clearBtn = document.getElementById('clearSearch');
+    searchEl.addEventListener('input', ()=> {
+      const q = searchEl.value.trim().toLowerCase();
+      cy.elements().removeClass('faded');
+      if(!q) return;
+      const matches = cy.nodes().filter(node => node.data('label').toLowerCase().includes(q));
+      cy.elements().not(matches).addClass('faded');
+      if(matches.length) cy.fit(matches, 50);
+    });
+    clearBtn.addEventListener('click', ()=> { searchEl.value=''; cy.elements().removeClass('faded'); cy.fit(); });
+
+    cy.style().selector('.faded').style({ 'opacity': 0.12 }).update();
+
+  </script>
+</body>
+</html>
