@@ -113,10 +113,25 @@
       #cy{height:520px;}
       .info{width:340px;}
     }
+    /* Adaptaciones responsivas mejoradas */
     @media (max-width:880px){
-      body{flex-direction:column;padding:12px;}
-      .info{width:100%;}
-      .canvas-wrap{order:2;}
+      body{flex-direction:column;padding:10px;}
+      /* Mostrar primero el canvas y luego el panel de info en móvil */
+      .canvas-wrap{order:0;padding:10px;}
+      .info{order:1;width:100%;padding:12px;}
+      /* Ajustes visuales para botones y tarjetas */
+      .tools{gap:6px;}
+      .btn{padding:6px 8px;font-size:0.85rem;border-radius:8px;}
+      .node-card{min-height:90px;font-size:0.9rem;}
+      /* Altura del canvas relativa a la pantalla para mejor manejo táctil */
+      #cy{height:60vh;}
+    }
+    /* Ajustes extra para móviles pequeños */
+    @media (max-width:600px){
+      #cy{height:58vh;}
+      header h1{font-size:1rem;}
+      .info h2{font-size:0.98rem;}
+      .site-footer{right:10px;left:10px;bottom:8px;font-size:0.82rem;}
     }
 
     /* Footer pequeño fijo con crédito del desarrollador */
@@ -429,6 +444,30 @@
 
     cy.style().selector('.faded').style({ 'opacity': 0.12 }).update();
 
+    // ===== Ajustes dinámicos para responsividad (móvil/tabla) =====
+    (function(){
+      const cyEl = document.getElementById('cy');
+      function adaptLayout(){
+        const w = window.innerWidth;
+        if(!cy) return;
+        if(w <= 600){
+          cyEl.style.height = '58vh';
+          cy.nodes().style({ 'font-size': 10, 'text-max-width': 100, 'padding': '10px' });
+        } else if(w <= 880){
+          cyEl.style.height = '60vh';
+          cy.nodes().style({ 'font-size': 11, 'text-max-width': 120, 'padding': '12px' });
+        } else {
+          cyEl.style.height = '72vh';
+          cy.nodes().style({ 'font-size': 12, 'text-max-width': 160, 'padding': '14px' });
+        }
+        // forzar recálculo de cytoscape y mantener vista centrada
+        cy.resize();
+        cy.fit(cy.elements(), 50);
+      }
+      window.addEventListener('resize', () => { adaptLayout(); });
+      // init
+      adaptLayout();
+    })();
   </script>
 
   <!-- Footer: crédito del desarrollador -->
