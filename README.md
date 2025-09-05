@@ -1,3 +1,6 @@
+Jhon Edward Cifuenes
+Jhonci
+
 # Mapa Conceptual Interactivo: IA, Transhumanismo y Apocalipsis
 
 ![Banner del mapa conceptual interactivo](URL_DE_UNA_CAPTURA_DE_PANTALLA_DE_TU_MAPA.png)
