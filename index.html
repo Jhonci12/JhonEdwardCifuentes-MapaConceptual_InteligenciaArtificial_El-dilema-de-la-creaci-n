@@ -118,6 +118,22 @@
       .info{width:100%;}
       .canvas-wrap{order:2;}
     }
+
+    /* Footer pequeño fijo con crédito del desarrollador */
+    .site-footer{
+      position:fixed;
+      right:20px;
+      bottom:14px;
+      z-index:1200;
+      font-size:0.85rem;
+      color:var(--muted);
+      background: rgba(255,255,255,0.01);
+      padding:6px 10px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.02);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+      backdrop-filter: blur(4px);
+    }
   </style>
 </head>
 <body>
@@ -414,5 +430,12 @@
     cy.style().selector('.faded').style({ 'opacity': 0.12 }).update();
 
   </script>
+
+  <!-- Footer: crédito del desarrollador -->
+  <footer class="site-footer" aria-label="Créditos">
+    Desarrollado por Jhon Edward Cifuentes
+    <br>
+    <span style="display:block;margin-top:4px;font-size:0.85rem;color:var(--muted)">Todos los derechos reservados.</span>
+  </footer>
 </body>
 </html>
